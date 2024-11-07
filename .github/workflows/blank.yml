@@ -3,9 +3,9 @@ name: Flux Sync
 on:
   push:
     branches:
-      - main  # Trigger on push to main branch
+      - main
     paths:
-      - '**'  # Listen for changes in all locations
+      - '**'
 
 jobs:
   flux-sync:
@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Create .kube directory
+        run: mkdir -p ~/.kube  # Ensure the .kube directory exists
 
       - name: Set up Kubeconfig
         env:
