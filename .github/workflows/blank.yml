@@ -1,30 +1,28 @@
-name: e2e
+name: Flux Sync
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ '*' ]
-    tags-ignore: [ '*' ]
+    branches:
+      - main  # Trigger on push to main branch
+    paths:
+      - '**'  # Listen for changes in all locations
 
 jobs:
-  kubernetes:
+  flux-sync:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Setup Flux
-        uses: fluxcd/flux2/action@main
-      - name: Setup Kubernetes
-        uses: engineerd/setup-kind@v0.5.0
-        with:
-          version: "v0.11.1"
-      - name: Install Flux in Kubernetes Kind
-        run: flux install
-      - name: Setup cluster reconciliation
+
+      - name: Set up Kubeconfig
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: echo "${{ secrets.KUBECONFIG }}" | base64 --decode > ~/.kube/config
+
+      - name: Install Flux CLI
+        run: curl -s https://fluxcd.io/install.sh | sudo bash
+
+      - name: Reconcile Flux
         run: |
-          flux create source git flux-system \
-          --url=${{ github.event.repository.html_url }} \
-          --branch=${GITHUB_REF#refs/heads/}
-          flux create kustomization flux-system \
-          --source=flux-system \
-          --path=./clusters/staging
+          flux reconcile kustomization flux-system --with-source
